@@ -1,0 +1,12 @@
+import * as asar from "@electron/asar";
+import crypto from "crypto";
+import fs from "fs";
+import * as ResEdit from "resedit";
+const [,, asarPath, exePath] = process.argv;
+const { headerString, header } = asar.getRawHeader(asarPath);
+console.log("header sha256:", crypto.createHash("sha256").update(headerString).digest("hex"));
+const exe = ResEdit.NtExecutable.from(fs.readFileSync(exePath), { ignoreCert: true });
+const res = ResEdit.NtExecutableResource.from(exe);
+for (const e of res.entries.filter(e => e.type === "INTEGRITY")) console.log("exe resource:", e.id, Buffer.from(e.bin).toString());
+let unpacked = 0; (function w(n){ for (const k in n.files||{}) { const f=n.files[k]; if (f.unpacked) unpacked++; w(f);} })(header);
+console.log("unpacked entries:", unpacked);
